@@ -1,30 +1,18 @@
-@import "tailwindcss";
-
-@theme {
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
-
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+html {
+  scroll-behavior: smooth;
 }
 
-/* ---- Base styles ---- */
 body {
-  @apply bg-white text-gray-800 font-sans antialiased;
+  margin: 0;
+  padding: 0;
+  background: #0f170c;
 }
 
-/* ---- Ticker marquee animation ---- */
 @keyframes ticker {
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -34,17 +22,12 @@ body {
   animation: ticker 25s linear infinite;
 }
 
-/* ---- Smooth scroll ---- */
-html {
-  scroll-behavior: smooth;
-}
-
-/* ---- Fade in animation ---- */
 @keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -55,12 +38,13 @@ html {
   animation: fadeInUp 0.6s ease-out forwards;
 }
 
-/* ---- Pulse dot ---- */
 @keyframes pulse-dot {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.4;
   }
@@ -70,19 +54,18 @@ html {
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
-/* ---- Skeleton shimmer ---- */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
