@@ -36,7 +36,7 @@ explainer = shap.TreeExplainer(models[0])
 # =========================
 # APP SETUP
 # =========================
-app = FastAPI(title="Uzhavan IQ", version="2.0")
+app = FastAPI(title="Uzhavan AI", version="2.0")
 
 app.add_middleware(
     CORSMiddleware,
