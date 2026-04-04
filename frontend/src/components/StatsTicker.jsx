@@ -11,19 +11,24 @@ const items = [
 
 export default function StatsTicker() {
   return (
-    <div className="bg-primary-900 text-white overflow-hidden">
-      <div className="flex animate-ticker whitespace-nowrap py-3">
-        {/* Duplicate items for seamless loop */}
+    <div style={{
+      background: "rgba(134,179,80,0.08)",
+      borderBottom: "1px solid rgba(134,179,80,0.12)",
+      overflow: "hidden",
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
+      <div style={{ display: "flex", animation: "ticker 28s linear infinite", whiteSpace: "nowrap", padding: "10px 0" }}>
         {[...items, ...items].map((item, i) => (
-          <div key={i} className="inline-flex items-center gap-2 mx-8">
-            <item.icon className="w-4 h-4 text-primary-300" />
-            <span className="text-xs text-primary-200 font-medium">
-              {item.label}:
-            </span>
-            <span className="text-sm font-bold">{item.value}</span>
+          <div key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8, marginRight: 48 }}>
+            <item.icon size={14} color="#86B350" />
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>{item.label}:</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#86B350" }}>{item.value}</span>
           </div>
         ))}
       </div>
+      <style>{`
+        @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+      `}</style>
     </div>
   );
 }

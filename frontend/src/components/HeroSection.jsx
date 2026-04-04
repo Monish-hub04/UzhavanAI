@@ -1,126 +1,206 @@
-import { ArrowRight, BarChart3, Brain, Shield } from "lucide-react";
+import { ArrowRight, BarChart3, Brain, Shield, TrendingUp } from "lucide-react";
 
 export default function HeroSection() {
   return (
     <section
       id="dashboard"
-      className="relative overflow-hidden bg-linear-to-br from-primary-50 via-white to-primary-50/30"
+      style={{
+        background: "linear-gradient(160deg, #0f170c 0%, #162110 50%, #1a2a0f 100%)",
+        minHeight: "90vh",
+        display: "flex",
+        alignItems: "center",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "'DM Sans', sans-serif",
+      }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left — Text */}
-          <div className="animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-3 py-1.5 rounded-full text-xs font-semibold mb-6">
-              <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse-dot" />
-              Powered by Machine Learning
+      {/* Background decorative circles */}
+      <div style={{ position: "absolute", top: -100, right: -100, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(134,179,80,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -150, left: -100, width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(134,179,80,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+      {/* Grid texture overlay */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        backgroundImage: "linear-gradient(rgba(134,179,80,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(134,179,80,0.03) 1px, transparent 1px)",
+        backgroundSize: "60px 60px",
+      }} />
+
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "80px 24px", width: "100%", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }} className="hero-grid">
+          {/* Left */}
+          <div>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "rgba(134,179,80,0.12)", border: "1px solid rgba(134,179,80,0.25)",
+              padding: "6px 14px", borderRadius: 100,
+              marginBottom: 24,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#86B350", display: "inline-block", animation: "pulse 2s infinite" }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#86B350", letterSpacing: "0.5px" }}>POWERED BY MACHINE LEARNING</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
-              AI-Based
-              <span className="text-primary-600 block">Farmer Income</span>
-              Prediction
+            <h1 style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: "clamp(42px, 5vw, 68px)",
+              fontWeight: 800,
+              color: "#fff",
+              lineHeight: 1.1,
+              marginBottom: 24,
+              letterSpacing: "-1px",
+            }}>
+              Predict Farmer<br />
+              <span style={{ color: "#86B350" }}>Income</span> with<br />
+              AI Precision
             </h1>
 
-            <p className="mt-6 text-lg text-gray-500 max-w-lg leading-relaxed">
-              Empowering financial institutions to assess farmer
-              creditworthiness with machine learning — driving{" "}
-              <strong className="text-gray-700">financial inclusion</strong> in
-              agriculture.
+            <p style={{ fontSize: 17, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, maxWidth: 440, marginBottom: 36 }}>
+              Empowering financial institutions to assess farmer creditworthiness — driving <strong style={{ color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>financial inclusion</strong> across India's agricultural heartland.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <a
                 href="#prediction"
-                className="inline-flex items-center gap-2 bg-primary-600 text-white px-6 py-3.5 rounded-xl font-semibold text-sm hover:bg-primary-700 shadow-lg shadow-primary-600/25 hover:shadow-primary-700/30 transition-all hover:-translate-y-0.5"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "#86B350", color: "#0f170c",
+                  padding: "14px 28px", borderRadius: 12,
+                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                  transition: "all 0.2s",
+                  boxShadow: "0 8px 32px rgba(134,179,80,0.3)",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#9ecf62"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#86B350"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
-                Start Prediction
-                <ArrowRight className="w-4 h-4" />
+                Start Prediction <ArrowRight size={16} />
               </a>
               <a
                 href="#about"
-                className="inline-flex items-center gap-2 bg-white text-gray-700 px-6 py-3.5 rounded-xl font-semibold text-sm border border-gray-200 hover:border-primary-300 hover:text-primary-700 transition-all"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "transparent", color: "rgba(255,255,255,0.7)",
+                  padding: "14px 28px", borderRadius: 12,
+                  fontSize: 14, fontWeight: 600, textDecoration: "none",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(134,179,80,0.4)"; e.currentTarget.style.color = "#86B350"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
               >
                 Learn More
               </a>
             </div>
+
+            {/* Stats row */}
+            <div style={{ display: "flex", gap: 32, marginTop: 48, paddingTop: 48, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              {[
+                { value: "98.4%", label: "Accuracy" },
+                { value: "286", label: "Features" },
+                { value: "12.5K+", label: "Farmers" },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#86B350", fontFamily: "'Playfair Display', serif" }}>{stat.value}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2, fontWeight: 500 }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Right — Visual card */}
-          <div
-            className="hidden lg:flex justify-center animate-fade-in-up"
-            style={{ animationDelay: "0.2s" }}
-          >
-            <div className="relative w-full max-w-md">
+          {/* Right — Card */}
+          <div style={{ display: "flex", justifyContent: "center" }} className="hero-card-wrapper">
+            <div style={{ position: "relative", width: "100%", maxWidth: 420 }}>
               {/* Main card */}
-              <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-primary-600" />
+              <div style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(134,179,80,0.2)",
+                borderRadius: 20,
+                padding: 28,
+                backdropFilter: "blur(12px)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(134,179,80,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Brain size={20} color="#86B350" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">
-                      Income Analysis
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Real-time prediction
-                    </p>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>Income Analysis</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Real-time prediction</div>
+                  </div>
+                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, background: "rgba(134,179,80,0.12)", padding: "4px 10px", borderRadius: 100 }}>
+                    <span style={{ width: 6, height: 6, background: "#86B350", borderRadius: "50%", display: "inline-block" }} />
+                    <span style={{ fontSize: 11, color: "#86B350", fontWeight: 600 }}>LIVE</span>
                   </div>
                 </div>
 
-                {/* Mock bars */}
-                <div className="space-y-4">
+                {/* Bars */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {[
-                    { label: "Land Size", w: "85%", color: "bg-primary-500" },
-                    { label: "Crop Yield", w: "72%", color: "bg-primary-400" },
-                    {
-                      label: "Market Price",
-                      w: "60%",
-                      color: "bg-primary-300",
-                    },
-                    { label: "Rainfall", w: "45%", color: "bg-primary-200" },
+                    { label: "Land Size", pct: 85 },
+                    { label: "Crop Yield", pct: 72 },
+                    { label: "Market Price", pct: 60 },
+                    { label: "Rainfall", pct: 45 },
                   ].map((bar) => (
                     <div key={bar.label}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-500">{bar.label}</span>
-                        <span className="text-gray-400">{bar.w}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{bar.label}</span>
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{bar.pct}%</span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${bar.color} rounded-full`}
-                          style={{ width: bar.w }}
-                        />
+                      <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 100, overflow: "hidden" }}>
+                        <div style={{ width: `${bar.pct}%`, height: "100%", background: `linear-gradient(90deg, #4a7c20, #86B350)`, borderRadius: 100 }} />
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Mock result */}
-                <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
+                {/* Result */}
+                <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div>
-                    <p className="text-xs text-gray-400">Predicted Income</p>
-                    <p className="text-2xl font-bold text-primary-600">
-                      ₹12,54,000
-                    </p>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>PREDICTED INCOME</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: "#86B350", fontFamily: "'Playfair Display', serif" }}>₹12,54,000</div>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg text-xs font-semibold">
-                    <Shield className="w-3.5 h-3.5" />
-                    Eligible
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(134,179,80,0.12)", border: "1px solid rgba(134,179,80,0.2)", padding: "8px 14px", borderRadius: 10 }}>
+                    <Shield size={14} color="#86B350" />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#86B350" }}>Eligible</span>
                   </div>
                 </div>
               </div>
 
               {/* Floating badge */}
-              <div className="absolute -top-4 -right-4 bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 px-4 py-3 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary-500" />
+              <div style={{
+                position: "absolute", top: -16, right: -16,
+                background: "rgba(20,30,15,0.95)", border: "1px solid rgba(134,179,80,0.25)",
+                borderRadius: 14, padding: "10px 16px",
+                display: "flex", alignItems: "center", gap: 8,
+                backdropFilter: "blur(12px)",
+              }}>
+                <BarChart3 size={18} color="#86B350" />
                 <div>
-                  <p className="text-xs text-gray-400">Accuracy</p>
-                  <p className="text-sm font-bold text-gray-800">98.4%</p>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>Accuracy</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>98.4%</div>
+                </div>
+              </div>
+
+              {/* Bottom badge */}
+              <div style={{
+                position: "absolute", bottom: -16, left: -16,
+                background: "rgba(20,30,15,0.95)", border: "1px solid rgba(134,179,80,0.25)",
+                borderRadius: 14, padding: "10px 16px",
+                display: "flex", alignItems: "center", gap: 8,
+                backdropFilter: "blur(12px)",
+              }}>
+                <TrendingUp size={18} color="#86B350" />
+                <div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>Model</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>LightGBM</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @media (max-width: 768px) { .hero-grid { grid-template-columns: 1fr !important; } .hero-card-wrapper { display: none !important; } }
+      `}</style>
     </section>
   );
 }

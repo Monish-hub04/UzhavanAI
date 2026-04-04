@@ -1,90 +1,60 @@
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  Cell
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { Lightbulb } from "lucide-react";
 
 export default function ShapExplanations({ show, result }) {
   if (!show || !result || !result.shap_values) return null;
 
   const { positive, negative } = result.shap_values;
-  
-  // Format data for Recharts BarChart
-  // We want to show a diverging bar chart, where values can be positive or negative.
   const chartData = [
     ...positive.map((item) => ({ ...item, type: "positive" })),
-    ...negative.map((item) => ({ ...item, type: "negative" }))
+    ...negative.map((item) => ({ ...item, type: "negative" })),
   ].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
 
   return (
-    <div className="animate-fade-in-up mt-8 bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-6 sm:p-8">
-      <div className="flex items-center gap-2 mb-6">
-        <Lightbulb className="w-6 h-6 text-primary-500" />
+    <div style={{
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(134,179,80,0.12)",
+      borderRadius: 16, padding: 24,
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 24 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(134,179,80,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Lightbulb size={18} color="#86B350" />
+        </div>
         <div>
-          <h3 className="text-lg font-bold text-gray-900">Why was this income predicted?</h3>
-          <p className="text-sm text-gray-500">
-            AI explanation of the key factors driving the model's estimate.
-          </p>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>Why was this income predicted?</h3>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>AI explanation of the key factors driving the model's estimate</p>
         </div>
       </div>
 
-      <div className="h-[300px] w-full">
+      <div style={{ height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            barSize={20}
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
-            <XAxis 
-              type="number" 
-              tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
-              tick={{ fontSize: 11, fill: "#9ca3af" }}
-              axisLine={false}
-              tickLine={false}
+          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }} barSize={20}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
+            <XAxis type="number" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: "rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="feature" width={160} tick={{ fontSize: 11, fill: "rgba(255,255,255,0.5)" }} axisLine={false} tickLine={false} />
+            <Tooltip cursor={{ fill: "rgba(134,179,80,0.05)" }}
+              contentStyle={{ background: "#162110", border: "1px solid rgba(134,179,80,0.2)", borderRadius: 10, fontSize: 12, color: "#fff", boxShadow: "none" }}
+              formatter={(value) => [`${value > 0 ? "+" : ""}₹${value.toLocaleString()}`, "Impact"]}
+              labelStyle={{ color: "rgba(255,255,255,0.7)", fontWeight: 600, marginBottom: 4 }}
             />
-            <YAxis 
-              type="category" 
-              dataKey="feature" 
-              width={160}
-              tick={{ fontSize: 11, fill: "#4b5563" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              cursor={{ fill: "#f9fafb" }}
-              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-              formatter={(value) => [`${value > 0 ? '+' : ''}₹${value.toLocaleString()}`, "Impact"]}
-              labelStyle={{ color: '#374151', fontWeight: 600, marginBottom: '4px' }}
-            />
-            <ReferenceLine x={0} stroke="#9ca3af" />
+            <ReferenceLine x={0} stroke="rgba(255,255,255,0.1)" />
             <Bar dataKey="value" radius={[0, 4, 4, 0]}>
               {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.type === "positive" ? "#10b981" : "#ef4444"} 
-                />
+                <Cell key={`cell-${index}`} fill={entry.type === "positive" ? "#86B350" : "#ef4444"} />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="flex gap-4 mt-6 justify-center">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+      <div style={{ display: "flex", gap: 20, marginTop: 16, justifyContent: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#86B350", display: "inline-block" }} />
           Increases Estimate
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
           Decreases Estimate
         </div>
       </div>

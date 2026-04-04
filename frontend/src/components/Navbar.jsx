@@ -1,68 +1,120 @@
-import { useState } from "react";
-import { Menu, X, Sprout } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
 
 const links = [
-  { label: "Dashboard", href: "#dashboard" },
-  { label: "Prediction", href: "#prediction" },
+  { label: "Home", href: "#dashboard" },
+  { label: "Predict", href: "#prediction" },
   { label: "Insights", href: "#insights" },
   { label: "About", href: "#about" },
 ];
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center group-hover:bg-primary-700 transition-colors">
-              <Sprout className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">
-              Uzhavan<span className="text-primary-600"> IQ</span>
-            </span>
-          </a>
+    <nav
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        background: scrolled ? "rgba(15, 23, 12, 0.97)" : "rgba(15, 23, 12, 1)",
+        backdropFilter: "blur(12px)",
+        borderBottom: scrolled ? "1px solid rgba(134, 179, 80, 0.15)" : "1px solid transparent",
+        transition: "all 0.3s ease",
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
 
-          {/* Desktop menu */}
-          <div className="hidden md:flex items-center gap-1">
-            {links.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="px-4 py-2 text-sm font-medium text-gray-600 rounded-lg hover:text-primary-700 hover:bg-primary-50 transition-all"
-              >
-                {link.label}
-              </a>
-            ))}
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+        {/* Logo */}
+        <a href="#" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "linear-gradient(135deg, #86B350, #4a7c20)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18,
+          }}>
+            🌾
           </div>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>
+            Uzhavan<span style={{ color: "#86B350" }}> IQ</span>
+          </span>
+        </a>
 
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
-            onClick={() => setOpen(!open)}
+        {/* Desktop links */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }} className="desktop-links">
+          {links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              style={{
+                padding: "8px 16px",
+                fontSize: 14,
+                fontWeight: 500,
+                color: "rgba(255,255,255,0.65)",
+                borderRadius: 8,
+                textDecoration: "none",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={e => { e.target.style.color = "#fff"; e.target.style.background = "rgba(134,179,80,0.12)"; }}
+              onMouseLeave={e => { e.target.style.color = "rgba(255,255,255,0.65)"; e.target.style.background = "transparent"; }}
+            >
+              {link.label}
+            </a>
+          ))}
+          <a
+            href="#prediction"
+            style={{
+              marginLeft: 8, padding: "8px 20px",
+              fontSize: 13, fontWeight: 600,
+              background: "#86B350", color: "#0f170c",
+              borderRadius: 8, textDecoration: "none",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={e => { e.target.style.background = "#9ecf62"; }}
+            onMouseLeave={e => { e.target.style.background = "#86B350"; }}
           >
-            {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+            Get Started
+          </a>
         </div>
 
-        {/* Mobile menu */}
-        {open && (
-          <div className="md:hidden pb-4 border-t border-gray-100 mt-2 pt-2">
-            {links.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="block px-4 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:text-primary-700 hover:bg-primary-50 transition-all"
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-        )}
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setOpen(!open)}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: 8, display: "none" }}
+          className="mobile-hamburger"
+        >
+          {open ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <div style={{ background: "rgba(15,23,12,0.98)", borderTop: "1px solid rgba(134,179,80,0.1)", padding: "12px 24px 16px" }}>
+          {links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              style={{ display: "block", padding: "10px 0", fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 768px) { .desktop-links { display: none !important; } .mobile-hamburger { display: block !important; } }
+      `}</style>
     </nav>
   );
 }
