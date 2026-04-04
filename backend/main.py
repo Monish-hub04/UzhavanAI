@@ -149,6 +149,10 @@ def predict_single(req: PredictionRequest) -> dict:
 def health():
     return {"status": "ok"}
 
+@app.get("/api/features")
+def get_features():
+    return {"features": list(feature_names[:30]), "total": len(feature_names)}
+
 
 @app.post("/api/predict")
 def predict(req: PredictionRequest):
