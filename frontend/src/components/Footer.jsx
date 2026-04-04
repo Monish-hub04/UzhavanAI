@@ -8,7 +8,7 @@ export default function Footer() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #86B350, #4a7c20)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🌾</div>
               <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "'Playfair Display', serif" }}>
-                Uzhavan<span style={{ color: "#86B350" }}> IQ</span>
+                Uzhavan<span style={{ color: "#86B350" }}> AI</span>
               </span>
             </div>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, maxWidth: 300, marginBottom: 24 }}>
@@ -49,7 +49,7 @@ export default function Footer() {
         </div>
 
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>© {new Date().getFullYear()} Uzhavan IQ — AI for Agricultural Finance</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>© {new Date().getFullYear()} Uzhavan AI — AI for Agricultural Finance</span>
           <span style={{ fontSize: 12, color: "rgba(134,179,80,0.4)" }}>Built for Financial Inclusion 🌾</span>
         </div>
       </div>

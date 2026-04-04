@@ -45,7 +45,7 @@ export default function Navbar() {
             🌾
           </div>
           <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>
-            Uzhavan<span style={{ color: "#86B350" }}> IQ</span>
+            Uzhavan<span style={{ color: "#86B350" }}> AI</span>
           </span>
         </a>
 
