@@ -59,6 +59,7 @@ class PredictionRequest(BaseModel):
     temperature: float = 28.0
     market_price: float = 2200.0
     market_distance: float = 12.0
+    non_agri_income: float = 100000.0
 
 
 class CompareRequest(BaseModel):
@@ -78,10 +79,41 @@ class PlanRequest(BaseModel):
 # HELPER FUNCTIONS
 # =========================
 def build_feature_vector(req: PredictionRequest):
+    # Mean values derived from training data, used as stand-ins for features
+    # the user cannot directly provide (village-level socio/infra scores etc.)
+    MEAN_SOCIO = feature_defaults.get(
+        "KO22_Village_score_based_on_socio_economic_parameters_0_to_100", 37.8
+    )
+    MEAN_VILLAGE_POP = 42.7   # avg number of training records per village
+    MEAN_AVG_DISB = feature_defaults.get("Avg_Disbursement_Amount_Bureau", 129097.8)
+
+    non_agri = req.non_agri_income
+    land = req.land_size
+
     row = {feat: feature_defaults.get(feat, 0.0) for feat in feature_names}
 
-    row["Total_Land_For_Agriculture"] = req.land_size
+    # --- Direct inputs ---
+    row["Total_Land_For_Agriculture"] = land
     row["K022_Proximity_to_nearest_mandi_Km"] = req.market_distance
+    row["Non_Agriculture_Income"] = non_agri
+
+    # --- Engineered interaction features ---
+    # These are the top-importance features the model relies on.
+    # They were all defaulting to 0.0, making every prediction return ₹13
+    # regardless of input. Now computed using the same formulas as data_prep.py.
+    row["Land_sq"] = land ** 2
+    row["NonAgriIncome_sq"] = non_agri ** 2
+    row["Income_x_Land"] = non_agri * land
+    row["Land_x_SocioScore"] = land * MEAN_SOCIO
+    row["SocioScore_x_MandiDist"] = MEAN_SOCIO * req.market_distance
+    # Land_per_Person was computed as land / (village_population + 1) in training
+    row["Land_per_Person"] = land / (MEAN_VILLAGE_POP + 1)
+    row["Land_Holding_Index_source_Total_Agri_Area_no_of_people"] = land / (MEAN_VILLAGE_POP + 1)
+    # Loan_to_Income_Ratio was Avg_Disbursement / (non_agri_income + 1) in training
+    row["Loan_to_Income_Ratio"] = MEAN_AVG_DISB / (non_agri + 1)
+    # Market_Access_Score = 1/(1+mandi_dist) * 1/(1+railway_dist)
+    # Use mandi_dist for both since we don't have railway distance from the form
+    row["Market_Access_Score"] = 1.0 / (1 + req.market_distance) * 1.0 / (1 + req.market_distance)
 
     for key in row:
         if "Rainfall" in key:
@@ -132,7 +164,8 @@ def compute_loan_eligibility(predicted_income: int) -> str:
 def predict_single(req: PredictionRequest) -> dict:
     X = build_feature_vector(req)
     preds = [model.predict(X)[0] for model in models]
-    predicted_income = int(np.mean(preds))
+    # Models were trained on log1p(income) — apply inverse transform
+    predicted_income = int(np.expm1(np.mean(preds)))
     agri_score = compute_agri_score(req, predicted_income)
     loan_eligibility = compute_loan_eligibility(predicted_income)
     return {
@@ -158,8 +191,13 @@ def get_features():
 def predict(req: PredictionRequest):
     X = build_feature_vector(req)
     preds = [model.predict(X)[0] for model in models]
-    avg = int(np.mean(preds))
-    return {"predicted_income": avg}
+    # Models were trained on log1p(income) — apply inverse transform
+    fold_predictions = [int(np.expm1(p)) for p in preds]
+    avg = int(np.mean(fold_predictions))
+    return {
+        "predicted_income": avg,
+        "fold_predictions": fold_predictions,
+    }
 
 
 # =========================
