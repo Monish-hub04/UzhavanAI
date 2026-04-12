@@ -85,35 +85,42 @@ def build_feature_vector(req: PredictionRequest):
         "KO22_Village_score_based_on_socio_economic_parameters_0_to_100", 37.8
     )
     MEAN_VILLAGE_POP = 42.7   # avg number of training records per village
-    MEAN_AVG_DISB = feature_defaults.get("Avg_Disbursement_Amount_Bureau", 129097.8)
 
-    non_agri = req.non_agri_income
+    # IMPORTANT: Non_Agriculture_Income and Avg_Disbursement_Amount_Bureau were
+    # log1p-transformed in data_prep.py (LOG_TRANSFORM_COLS) BEFORE the model
+    # was trained. We must pass log1p values here to match training distribution.
+    # MEAN_AVG_DISB_LOG = log1p mean of Avg_Disbursement_Amount_Bureau ≈ 11.34
+    MEAN_AVG_DISB_LOG = feature_defaults.get("Avg_Disbursement_Amount_Bureau", 11.344562)
+
+    non_agri_raw = req.non_agri_income
     land = req.land_size
+
+    # ✅ Convert non-agri income to log-space — this is what the model was trained on
+    non_agri_log = np.log1p(max(non_agri_raw, 0))
 
     row = {feat: feature_defaults.get(feat, 0.0) for feat in feature_names}
 
     # --- Direct inputs ---
     row["Total_Land_For_Agriculture"] = land
     row["K022_Proximity_to_nearest_mandi_Km"] = req.market_distance
-    row["Non_Agriculture_Income"] = non_agri
+    # ✅ Pass log-transformed value, matching training pipeline in data_prep.py
+    row["Non_Agriculture_Income"] = non_agri_log
 
     # --- Engineered interaction features ---
-    # These are the top-importance features the model relies on.
-    # They were all defaulting to 0.0, making every prediction return ₹13
-    # regardless of input. Now computed using the same formulas as data_prep.py.
+    # All computed using the SAME formulas as data_prep.py feature engineering.
+    # Non-agri income must be in log-space because that's what was used during training.
     row["Land_sq"] = land ** 2
-    row["NonAgriIncome_sq"] = non_agri ** 2
-    row["Income_x_Land"] = non_agri * land
+    row["NonAgriIncome_sq"] = non_agri_log ** 2           # ✅ log-space squared
+    row["Income_x_Land"] = non_agri_log * land            # ✅ log-space × land acres
     row["Land_x_SocioScore"] = land * MEAN_SOCIO
     row["SocioScore_x_MandiDist"] = MEAN_SOCIO * req.market_distance
-    # Land_per_Person was computed as land / (village_population + 1) in training
+    # Land_per_Person = land / (village_population + 1) — as in data_prep.py
     row["Land_per_Person"] = land / (MEAN_VILLAGE_POP + 1)
     row["Land_Holding_Index_source_Total_Agri_Area_no_of_people"] = land / (MEAN_VILLAGE_POP + 1)
-    # Loan_to_Income_Ratio was Avg_Disbursement / (non_agri_income + 1) in training
-    row["Loan_to_Income_Ratio"] = MEAN_AVG_DISB / (non_agri + 1)
-    # Market_Access_Score = 1/(1+mandi_dist) * 1/(1+railway_dist)
-    # Use mandi_dist for both since we don't have railway distance from the form
-    row["Market_Access_Score"] = 1.0 / (1 + req.market_distance) * 1.0 / (1 + req.market_distance)
+    # Loan_to_Income_Ratio uses log-space for both numerator and denominator
+    row["Loan_to_Income_Ratio"] = MEAN_AVG_DISB_LOG / (non_agri_log + 1)
+    # Market_Access_Score = 1/(1+mandi_dist)^2 (using mandi as proxy for railway dist too)
+    row["Market_Access_Score"] = 1.0 / (1 + req.market_distance) ** 2
 
     for key in row:
         if "Rainfall" in key:
@@ -126,11 +133,16 @@ def build_feature_vector(req: PredictionRequest):
 
 
 def compute_agri_score(req: PredictionRequest, predicted_income: int) -> float:
-    """Compute a 0-100 AgriScore based on key farming factors."""
+    """Compute a 0-100 AgriScore based on key farming factors.
+
+    Income ceiling is anchored to training data: median ₹9.5L, 75th pct ₹13L,
+    99th pct ₹63L. We use ₹20L as a realistic upper bound for full score.
+    """
     score = 0.0
 
-    # Income score (max 40 pts) — normalized against 200,000 ceiling
-    score += min(predicted_income / 200000, 1.0) * 40
+    # Income score (max 40 pts) — normalized against ₹20L ceiling (realistic upper bound)
+    # Training median is ₹9.5L, so median farmers score ~19/40 on this component
+    score += min(predicted_income / 2_000_000, 1.0) * 40
 
     # Irrigation score (max 20 pts)
     score += (req.irrigated_percentage / 100) * 20
@@ -143,7 +155,7 @@ def compute_agri_score(req: PredictionRequest, predicted_income: int) -> float:
     else:
         score += 3
 
-    # Land size score (max 15 pts)
+    # Land size score (max 15 pts) — 20 acres = full score (training mean ~10 acres)
     score += min(req.land_size / 20, 1.0) * 15
 
     # Market proximity score (max 10 pts) — closer is better
@@ -153,9 +165,13 @@ def compute_agri_score(req: PredictionRequest, predicted_income: int) -> float:
 
 
 def compute_loan_eligibility(predicted_income: int) -> str:
-    if predicted_income >= 150000:
+    # Anchored to training data distribution:
+    #   25th pct = ₹7.2L  →  below this = Low
+    #   75th pct = ₹13L   →  above this = High
+    #   between            →  Medium
+    if predicted_income >= 1_300_000:
         return "High"
-    elif predicted_income >= 75000:
+    elif predicted_income >= 720_000:
         return "Medium"
     else:
         return "Low"

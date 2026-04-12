@@ -3,10 +3,10 @@ import { useForm } from "react-hook-form";
 import { Loader2, MapPin, Sprout, Cloud, Store, Sparkles } from "lucide-react";
 
 const demoProfiles = [
-  { name: "💰 High Income — Sugarcane, Maharashtra", land_size: "15", irrigated_percentage: 95, soil_type: "Black Cotton", crop_type: "Sugarcane", season: "Kharif", yield_per_acre: "38", rainfall: "800", temperature: "30", market_price: "3500", market_distance: "5" },
-  { name: "📉 Low Income — Small Rainfed Plot, Bihar", land_size: "1.5", irrigated_percentage: 10, soil_type: "Sandy", crop_type: "Pulses", season: "Rabi", yield_per_acre: "6", rainfall: "400", temperature: "25", market_price: "4200", market_distance: "35" },
-  { name: "🌊 Edge — Flood-Prone Rice, Tamil Nadu", land_size: "5", irrigated_percentage: 70, soil_type: "Alluvial", crop_type: "Rice", season: "Kharif", yield_per_acre: "20", rainfall: "1400", temperature: "29", market_price: "2100", market_distance: "12" },
-  { name: "🏔️ Edge — High Yield but Remote, Himachal", land_size: "8", irrigated_percentage: 50, soil_type: "Loamy", crop_type: "Vegetables", season: "Zaid", yield_per_acre: "30", rainfall: "650", temperature: "18", market_price: "6000", market_distance: "55" },
+  { name: "💰 High Income — Sugarcane, Maharashtra", land_size: "15", irrigated_percentage: 95, soil_type: "Black Cotton", crop_type: "Sugarcane", season: "Kharif", yield_per_acre: "38", rainfall: "800", temperature: "30", market_price: "3500", market_distance: "5", non_agri_income: "250000" },
+  { name: "📉 Low Income — Small Rainfed Plot, Bihar", land_size: "1.5", irrigated_percentage: 10, soil_type: "Sandy", crop_type: "Pulses", season: "Rabi", yield_per_acre: "6", rainfall: "400", temperature: "25", market_price: "4200", market_distance: "35", non_agri_income: "0" },
+  { name: "🌊 Edge — Flood-Prone Rice, Tamil Nadu", land_size: "5", irrigated_percentage: 70, soil_type: "Alluvial", crop_type: "Rice", season: "Kharif", yield_per_acre: "20", rainfall: "1400", temperature: "29", market_price: "2100", market_distance: "12", non_agri_income: "100000" },
+  { name: "🏔️ Edge — High Yield but Remote, Himachal", land_size: "8", irrigated_percentage: 50, soil_type: "Loamy", crop_type: "Vegetables", season: "Zaid", yield_per_acre: "30", rainfall: "650", temperature: "18", market_price: "6000", market_distance: "55", non_agri_income: "50000" },
 ];
 
 const soilTypes = ["Loamy", "Clay", "Sandy", "Black Cotton", "Red", "Alluvial", "Laterite"];
@@ -67,7 +67,7 @@ export default function PredictionForm({ onSubmit, isLoading }) {
   const [weatherError, setWeatherError] = useState("");
 
   const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm({
-    defaultValues: { land_size: "", irrigated_percentage: 50, soil_type: "", crop_type: "", season: "", yield_per_acre: "", rainfall: "", temperature: "", market_price: "", market_distance: "" },
+    defaultValues: { land_size: "", irrigated_percentage: 50, soil_type: "", crop_type: "", season: "", yield_per_acre: "", rainfall: "", temperature: "", market_price: "", market_distance: "", non_agri_income: "" },
   });
 
   const irrigated = watch("irrigated_percentage");
@@ -225,8 +225,8 @@ export default function PredictionForm({ onSubmit, isLoading }) {
 
           {/* Section 4 */}
           <div style={card}>
-            <SectionHeader icon={Store} title="Market Details" />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="form-grid-2">
+            <SectionHeader icon={Store} title="Market &amp; Income Details" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }} className="form-grid-2">
               <Field label="Price per Quintal (₹)" error={errors.market_price}>
                 <input type="number" placeholder="e.g. 2200" style={inputStyle}
                   {...register("market_price", { required: "Required", min: { value: 1, message: "Min 1" } })}
@@ -240,6 +240,15 @@ export default function PredictionForm({ onSubmit, isLoading }) {
                   onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"} />
               </Field>
             </div>
+            <Field label="Non-Agricultural Income (₹/year)" error={errors.non_agri_income}>
+              <input type="number" placeholder="e.g. 100000 — enter 0 if none" style={inputStyle}
+                {...register("non_agri_income", { required: "Required", min: { value: 0, message: "Min 0" } })}
+                onFocus={e => e.target.style.borderColor = "rgba(134,179,80,0.5)"}
+                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"} />
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 5, display: "block" }}>
+                Income from labour, business, pension, govt. schemes, etc. — this is a key model feature
+              </span>
+            </Field>
           </div>
 
           <button type="submit" disabled={isLoading}

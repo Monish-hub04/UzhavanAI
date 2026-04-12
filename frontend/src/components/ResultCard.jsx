@@ -59,6 +59,23 @@ export default function ResultCard({ result }) {
             </div>
           )}
         </div>
+
+        {/* Income benchmark context */}
+        <div style={{ marginTop: 24, padding: "14px 20px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12 }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 8, fontWeight: 600, letterSpacing: "0.4px" }}>TRAINING DATA BENCHMARKS</div>
+          <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 8 }}>
+            {[
+              { label: "Bottom 25%", value: "< ₹7.2L", active: income < 720000 },
+              { label: "Median", value: "₹9.5L", active: income >= 720000 && income < 1300000 },
+              { label: "Top 25%", value: "> ₹13L", active: income >= 1300000 },
+            ].map(({ label, value, active }) => (
+              <div key={label} style={{ textAlign: "center", padding: "6px 14px", borderRadius: 8, background: active ? "rgba(134,179,80,0.1)" : "transparent", border: active ? "1px solid rgba(134,179,80,0.25)" : "1px solid transparent" }}>
+                <div style={{ fontSize: 11, color: active ? "#86B350" : "rgba(255,255,255,0.3)", fontWeight: active ? 700 : 400 }}>{label}</div>
+                <div style={{ fontSize: 13, color: active ? "#86B350" : "rgba(255,255,255,0.4)", fontWeight: 600 }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

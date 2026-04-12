@@ -28,14 +28,25 @@ train.columns = (
     .str.replace("%", "Perc")
 )
 
-# Get numeric median for all columns
+# Columns that were log1p-transformed in data_prep.py (LOG_TRANSFORM_COLS).
+# Defaults must be stored in log-space so build_feature_vector() can pass them
+# directly to the model without any further transformation.
+LOG_TRANSFORM_COLS = {
+    "Non_Agriculture_Income",
+    "Avg_Disbursement_Amount_Bureau",
+    "No_of_Active_Loan_In_Bureau",
+}
+
+# Get numeric median (or mean where more appropriate) for all columns
 medians = {}
 for col in train.columns:
     try:
-        vals = pd.to_numeric(train[col], errors="coerce")
+        vals = pd.to_numeric(train[col], errors="coerce").clip(lower=0)
         med = vals.median()
         if pd.notna(med):
-            medians[col] = float(med)
+            # Store log-transformed value for columns that were log1p'd during training
+            col_key = col  # raw column name from CSV (after clean-up above)
+            medians[col_key] = float(np.log1p(med)) if col_key in LOG_TRANSFORM_COLS else float(med)
     except Exception:
         pass
 
@@ -52,4 +63,4 @@ out_path = os.path.join(MODEL_DIR, "feature_defaults.json")
 with open(out_path, "w") as f:
     json.dump(feature_defaults, f, indent=2)
 
-print(f"Saved {len(feature_defaults)} feature defaults to {out_path}")
+print(f"Saved {len(feature_defaults)} feature defaults to {out_path}") 
