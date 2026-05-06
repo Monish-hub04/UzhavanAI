@@ -71,8 +71,8 @@ class PlanRequest(BaseModel):
     location: str
     date: str
     crop_type: str
-    temperature: float
-    rainfall: float
+    temperature: float = 25.0   # default if weather fetch fails
+    rainfall: float = 0.0       # default if weather fetch fails
 
 
 # =========================
