@@ -7,8 +7,8 @@ const cropTypes = ["Rice", "Wheat", "Sugarcane", "Cotton", "Maize", "Soybean", "
 const seasons = ["Kharif", "Rabi", "Zaid"];
 
 const presets = {
-  a: { name: "💰 High Income — Sugarcane, Maharashtra", land_size: "15", irrigated_percentage: 95, soil_type: "Black Cotton", crop_type: "Sugarcane", season: "Kharif", yield_per_acre: "38", rainfall: "800", temperature: "30", market_price: "3500", market_distance: "5" },
-  b: { name: "📉 Low Income — Small Rainfed Plot, Bihar", land_size: "1.5", irrigated_percentage: 10, soil_type: "Sandy", crop_type: "Pulses", season: "Rabi", yield_per_acre: "6", rainfall: "400", temperature: "25", market_price: "4200", market_distance: "35" },
+  a: { name: "💰 High Income — Sugarcane, Maharashtra", land_size: "15", irrigated_percentage: 95, soil_type: "Black Cotton", crop_type: "Sugarcane", season: "Kharif", yield_per_acre: "38", rainfall: "800", temperature: "30", market_price: "3500", market_distance: "5", non_agri_income: "250000" },
+  b: { name: "📉 Low Income — Small Rainfed Plot, Bihar", land_size: "1.5", irrigated_percentage: 10, soil_type: "Sandy", crop_type: "Pulses", season: "Rabi", yield_per_acre: "6", rainfall: "400", temperature: "25", market_price: "4200", market_distance: "35", non_agri_income: "0" },
 };
 
 const inputStyle = {
@@ -97,6 +97,9 @@ function ScenarioPanel({ id, label, icon: Icon, accent, register, errors, setVal
             {soilTypes.map((s) => <option key={s} value={s} style={{ background: "#162110" }}>{s}</option>)}
           </select>
         </Field>
+        <Field label="Non-Agri Income (₹)" error={errors?.[`${prefix}_non_agri_income`]}>
+          <input type="number" placeholder="100000" style={inputStyle} {...register(`${prefix}_non_agri_income`, { required: "Required", min: { value: 0, message: "Min 0" } })} onFocus={e => e.target.style.borderColor = accentColor} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"} />
+        </Field>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
@@ -166,8 +169,8 @@ export default function CompareForm({ onSubmit, isLoading }) {
 
   const { register, handleSubmit, watch, setValue, getValues, reset, formState: { errors } } = useForm({
     defaultValues: {
-      a_land_size: "", a_irrigated_percentage: 50, a_soil_type: "", a_crop_type: "", a_season: "", a_yield_per_acre: "", a_rainfall: "", a_temperature: "", a_market_price: "", a_market_distance: "",
-      b_land_size: "", b_irrigated_percentage: 50, b_soil_type: "", b_crop_type: "", b_season: "", b_yield_per_acre: "", b_rainfall: "", b_temperature: "", b_market_price: "", b_market_distance: "",
+      a_land_size: "", a_irrigated_percentage: 50, a_soil_type: "", a_crop_type: "", a_season: "", a_yield_per_acre: "", a_rainfall: "", a_temperature: "", a_market_price: "", a_market_distance: "", a_non_agri_income: "",
+      b_land_size: "", b_irrigated_percentage: 50, b_soil_type: "", b_crop_type: "", b_season: "", b_yield_per_acre: "", b_rainfall: "", b_temperature: "", b_market_price: "", b_market_distance: "", b_non_agri_income: "",
     },
   });
 
@@ -183,7 +186,7 @@ export default function CompareForm({ onSubmit, isLoading }) {
 
   const swapScenarios = () => {
     const vals = getValues();
-    const fields = ["land_size", "irrigated_percentage", "soil_type", "crop_type", "season", "yield_per_acre", "rainfall", "temperature", "market_price", "market_distance"];
+    const fields = ["land_size", "irrigated_percentage", "soil_type", "crop_type", "season", "yield_per_acre", "rainfall", "temperature", "market_price", "market_distance", "non_agri_income"];
     const newVals = {};
     fields.forEach((f) => { newVals[`a_${f}`] = vals[`b_${f}`]; newVals[`b_${f}`] = vals[`a_${f}`]; });
     reset({ ...vals, ...newVals }); setPresetA(presetB); setPresetB(presetA);
@@ -195,7 +198,7 @@ export default function CompareForm({ onSubmit, isLoading }) {
       soil_type: data[`${prefix}_soil_type`], crop_type: data[`${prefix}_crop_type`], season: data[`${prefix}_season`],
       yield_per_acre: parseFloat(data[`${prefix}_yield_per_acre`]), rainfall: parseFloat(data[`${prefix}_rainfall`]),
       temperature: parseFloat(data[`${prefix}_temperature`]), market_price: parseFloat(data[`${prefix}_market_price`]),
-      market_distance: parseFloat(data[`${prefix}_market_distance`]),
+      market_distance: parseFloat(data[`${prefix}_market_distance`]), non_agri_income: parseFloat(data[`${prefix}_non_agri_income`]),
     });
     onSubmit({ scenario_a: extractScenario("a"), scenario_b: extractScenario("b") });
   };
