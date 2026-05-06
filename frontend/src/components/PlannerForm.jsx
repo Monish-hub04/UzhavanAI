@@ -42,37 +42,48 @@ async function getCoordinates(location) {
   };
 }
 
-// Get historical climate average for that month
-// Uses last year's same month as a reliable proxy for far-future dates
-async function fetchClimateAverage(lat, lon, month) {
-  // Use last year's data for the same month as seasonal average
-  const lastYear = new Date().getFullYear() - 1;
+// Fetch 5-year climate normals for a given month (parallel requests)
+async function fetchClimateNormals(lat, lon, month) {
   const pad = (n) => String(n).padStart(2, "0");
-  const startDate = `${lastYear}-${pad(month)}-01`;
-  // End on last day of that month
-  const lastDay = new Date(lastYear, month, 0).getDate();
-  const endDate = `${lastYear}-${pad(month)}-${pad(lastDay)}`;
+  const years = [2020, 2019, 2018, 2017, 2016];
+  const allTemps = [];
+  const allRain = [];
 
-  const res = await fetch(
-    `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}` +
-    `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum` +
-    `&start_date=${startDate}&end_date=${endDate}` +
-    `&timezone=Asia%2FKolkata`
+  const requests = years.map((year) => {
+    const lastDay = new Date(year, month, 0).getDate();
+    const startDate = `${year}-${pad(month)}-01`;
+    const endDate = `${year}-${pad(month)}-${pad(lastDay)}`;
+    return fetch(
+      `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum` +
+      `&start_date=${startDate}&end_date=${endDate}` +
+      `&timezone=Asia%2FKolkata`
+    ).then((r) => r.json());
+  });
+
+  const results = await Promise.all(requests);
+
+  for (const data of results) {
+    if (!data.daily) continue;
+    const max = data.daily.temperature_2m_max;
+    const min = data.daily.temperature_2m_min;
+    const rain = data.daily.precipitation_sum;
+    const avgTemp = max.map((mx, i) => (mx + min[i]) / 2);
+    allTemps.push(...avgTemp);
+    allRain.push(...rain);
+  }
+
+  if (allTemps.length === 0) throw new Error("No climate data available");
+
+  const temperature = parseFloat(
+    (allTemps.reduce((a, b) => a + b, 0) / allTemps.length).toFixed(1)
   );
-  const data = await res.json();
+  // Monthly total average rainfall
+  const rainfall = parseFloat(
+    (allRain.reduce((a, b) => a + b, 0) / results.length).toFixed(1)
+  );
 
-  if (!data.daily) throw new Error("Climate data unavailable");
-
-  // Average across the whole month
-  const avgMax = data.daily.temperature_2m_max.reduce((a, b) => a + b, 0) / data.daily.temperature_2m_max.length;
-  const avgMin = data.daily.temperature_2m_min.reduce((a, b) => a + b, 0) / data.daily.temperature_2m_min.length;
-  const totalRain = data.daily.precipitation_sum.reduce((a, b) => a + b, 0);
-
-  return {
-    temperature: parseFloat(((avgMax + avgMin) / 2).toFixed(1)),
-    rainfall: parseFloat(totalRain.toFixed(1)),
-    isClimateAvg: true,
-  };
+  return { temperature, rainfall, isClimateAvg: true };
 }
 
 async function fetchWeatherForDate(lat, lon, date) {
@@ -82,9 +93,9 @@ async function fetchWeatherForDate(lat, lon, date) {
   const forecastLimitStr = forecastLimit.toISOString().split("T")[0];
 
   const targetDate = new Date(date);
-  const month = targetDate.getMonth() + 1; // 1-12
+  const month = targetDate.getMonth() + 1;
 
-  // Case 1: Past date → use archive API
+  // Past date → archive API
   if (date < today) {
     const res = await fetch(
       `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}` +
@@ -94,19 +105,16 @@ async function fetchWeatherForDate(lat, lon, date) {
     );
     const data = await res.json();
     if (!data.daily) throw new Error("Archive data unavailable");
-
     const tempMax = data.daily.temperature_2m_max?.[0] ?? 30;
     const tempMin = data.daily.temperature_2m_min?.[0] ?? 22;
-    const rainfall = data.daily.precipitation_sum?.[0] ?? 0;
-
     return {
       temperature: parseFloat(((tempMax + tempMin) / 2).toFixed(1)),
-      rainfall: parseFloat((rainfall ?? 0).toFixed(1)),
+      rainfall: parseFloat((data.daily.precipitation_sum?.[0] ?? 0).toFixed(1)),
       isClimateAvg: false,
     };
   }
 
-  // Case 2: Within 15 days → use forecast API
+  // Within 15 days → forecast API
   if (date <= forecastLimitStr) {
     const res = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
@@ -116,20 +124,17 @@ async function fetchWeatherForDate(lat, lon, date) {
     );
     const data = await res.json();
     if (!data.daily) throw new Error("Forecast data unavailable");
-
     const tempMax = data.daily.temperature_2m_max?.[0] ?? 30;
     const tempMin = data.daily.temperature_2m_min?.[0] ?? 22;
-    const rainfall = data.daily.precipitation_sum?.[0] ?? 0;
-
     return {
       temperature: parseFloat(((tempMax + tempMin) / 2).toFixed(1)),
-      rainfall: parseFloat((rainfall ?? 0).toFixed(1)),
+      rainfall: parseFloat((data.daily.precipitation_sum?.[0] ?? 0).toFixed(1)),
       isClimateAvg: false,
     };
   }
 
-  // Case 3: Far future (beyond 15 days) → use last year's monthly average
-  return await fetchClimateAverage(lat, lon, month);
+  // Far future → 5-year climate normals
+  return await fetchClimateNormals(lat, lon, month);
 }
 
 export default function PlannerForm() {
@@ -143,7 +148,6 @@ export default function PlannerForm() {
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherFetched, setWeatherFetched] = useState(false);
   const [weatherError, setWeatherError] = useState(null);
-  // Track if climate average was used instead of exact forecast
   const [isClimateAvg, setIsClimateAvg] = useState(false);
 
   const autoFillWeather = async (location, date) => {
@@ -318,7 +322,7 @@ export default function PlannerForm() {
                 )}
                 {weatherFetched && !weatherLoading && (
                   <span style={{ marginLeft: "auto", fontSize: 11, color: "#86B350", display: "flex", alignItems: "center", gap: 4 }}>
-                    <CheckCircle size={10} /> {isClimateAvg ? "Seasonal avg" : "Auto-filled"}
+                    <CheckCircle size={10} /> {isClimateAvg ? "5yr avg" : "Auto-filled"}
                   </span>
                 )}
               </label>
@@ -346,7 +350,7 @@ export default function PlannerForm() {
                 )}
                 {weatherFetched && !weatherLoading && (
                   <span style={{ marginLeft: "auto", fontSize: 11, color: "#86B350", display: "flex", alignItems: "center", gap: 4 }}>
-                    <CheckCircle size={10} /> {isClimateAvg ? "Seasonal avg" : "Auto-filled"}
+                    <CheckCircle size={10} /> {isClimateAvg ? "5yr avg" : "Auto-filled"}
                   </span>
                 )}
               </label>
@@ -374,7 +378,7 @@ export default function PlannerForm() {
           )}
           {isClimateAvg && weatherFetched && !weatherLoading && (
             <div style={{ marginBottom: 20, padding: "10px 14px", background: "rgba(134,179,80,0.04)", border: "1px solid rgba(134,179,80,0.1)", borderRadius: 8, fontSize: 12, color: "rgba(134,179,80,0.7)" }}>
-              📅 Date is beyond forecast range — showing seasonal climate average for that month. You can still edit manually.
+              📅 Date is beyond forecast range — showing 5-year climate average for that month. You can still edit manually.
             </div>
           )}
           {!weatherFetched && !weatherLoading && !weatherError && (
@@ -416,7 +420,7 @@ export default function PlannerForm() {
                   {formData.crop_type} · {formData.location} · {formData.date}
                   {weatherFetched && (
                     <span style={{ color: "#86B350", marginLeft: 8 }}>
-                      · {temperature}°C · {rainfall}mm {isClimateAvg ? "(seasonal avg)" : ""}
+                      · {temperature}°C · {rainfall}mm {isClimateAvg ? "(5yr avg)" : ""}
                     </span>
                   )}
                 </p>
