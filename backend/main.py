@@ -76,26 +76,51 @@ class PlanRequest(BaseModel):
 
 
 # =========================
+# CROP / SOIL / SEASON MULTIPLIER TABLES
+# =========================
+CROP_YIELD_MULTIPLIER = {
+    "Rice":       1.10,
+    "Wheat":      1.00,
+    "Sugarcane":  1.35,
+    "Cotton":     1.20,
+    "Maize":      1.05,
+    "Soybean":    0.95,
+    "Groundnut":  1.00,
+    "Pulses":     0.85,
+    "Vegetables": 1.25,
+    "Fruits":     1.30,
+}
+
+SOIL_MULTIPLIER = {
+    "Black":    1.15,
+    "Loamy":    1.10,
+    "Red":      0.95,
+    "Sandy":    0.80,
+    "Clay":     0.90,
+    "Alluvial": 1.20,
+}
+
+SEASON_MULTIPLIER = {
+    "Kharif":    1.05,
+    "Rabi":      1.00,
+    "Zaid":      0.90,
+    "Perennial": 1.10,
+}
+
+
+# =========================
 # HELPER FUNCTIONS
 # =========================
 def build_feature_vector(req: PredictionRequest):
-    # Mean values derived from training data, used as stand-ins for features
-    # the user cannot directly provide (village-level socio/infra scores etc.)
     MEAN_SOCIO = feature_defaults.get(
         "KO22_Village_score_based_on_socio_economic_parameters_0_to_100", 37.8
     )
-    MEAN_VILLAGE_POP = 42.7   # avg number of training records per village
-
-    # IMPORTANT: Non_Agriculture_Income and Avg_Disbursement_Amount_Bureau were
-    # log1p-transformed in data_prep.py (LOG_TRANSFORM_COLS) BEFORE the model
-    # was trained. We must pass log1p values here to match training distribution.
-    # MEAN_AVG_DISB_LOG = log1p mean of Avg_Disbursement_Amount_Bureau ≈ 11.34
+    MEAN_VILLAGE_POP = 42.7
     MEAN_AVG_DISB_LOG = feature_defaults.get("Avg_Disbursement_Amount_Bureau", 11.344562)
 
     non_agri_raw = req.non_agri_income
     land = req.land_size
 
-    # ✅ Convert non-agri income to log-space — this is what the model was trained on
     non_agri_log = np.log1p(max(non_agri_raw, 0))
 
     row = {feat: feature_defaults.get(feat, 0.0) for feat in feature_names}
@@ -103,23 +128,17 @@ def build_feature_vector(req: PredictionRequest):
     # --- Direct inputs ---
     row["Total_Land_For_Agriculture"] = land
     row["K022_Proximity_to_nearest_mandi_Km"] = req.market_distance
-    # ✅ Pass log-transformed value, matching training pipeline in data_prep.py
     row["Non_Agriculture_Income"] = non_agri_log
 
     # --- Engineered interaction features ---
-    # All computed using the SAME formulas as data_prep.py feature engineering.
-    # Non-agri income must be in log-space because that's what was used during training.
     row["Land_sq"] = land ** 2
-    row["NonAgriIncome_sq"] = non_agri_log ** 2           # ✅ log-space squared
-    row["Income_x_Land"] = non_agri_log * land            # ✅ log-space × land acres
+    row["NonAgriIncome_sq"] = non_agri_log ** 2
+    row["Income_x_Land"] = non_agri_log * land
     row["Land_x_SocioScore"] = land * MEAN_SOCIO
     row["SocioScore_x_MandiDist"] = MEAN_SOCIO * req.market_distance
-    # Land_per_Person = land / (village_population + 1) — as in data_prep.py
     row["Land_per_Person"] = land / (MEAN_VILLAGE_POP + 1)
     row["Land_Holding_Index_source_Total_Agri_Area_no_of_people"] = land / (MEAN_VILLAGE_POP + 1)
-    # Loan_to_Income_Ratio uses log-space for both numerator and denominator
     row["Loan_to_Income_Ratio"] = MEAN_AVG_DISB_LOG / (non_agri_log + 1)
-    # Market_Access_Score = 1/(1+mandi_dist)^2 (using mandi as proxy for railway dist too)
     row["Market_Access_Score"] = 1.0 / (1 + req.market_distance) ** 2
 
     for key in row:
@@ -133,21 +152,15 @@ def build_feature_vector(req: PredictionRequest):
 
 
 def compute_agri_score(req: PredictionRequest, predicted_income: int) -> float:
-    """Compute a 0-100 AgriScore based on key farming factors.
-
-    Income ceiling is anchored to training data: median ₹9.5L, 75th pct ₹13L,
-    99th pct ₹63L. We use ₹20L as a realistic upper bound for full score.
-    """
     score = 0.0
 
-    # Income score (max 40 pts) — normalized against ₹20L ceiling (realistic upper bound)
-    # Training median is ₹9.5L, so median farmers score ~19/40 on this component
+    # Income score (max 40 pts)
     score += min(predicted_income / 2_000_000, 1.0) * 40
 
     # Irrigation score (max 20 pts)
     score += (req.irrigated_percentage / 100) * 20
 
-    # Rainfall score (max 15 pts) — sweet spot 600-1200mm
+    # Rainfall score (max 15 pts)
     if 600 <= req.rainfall <= 1200:
         score += 15
     elif 300 <= req.rainfall < 600 or 1200 < req.rainfall <= 1800:
@@ -155,20 +168,16 @@ def compute_agri_score(req: PredictionRequest, predicted_income: int) -> float:
     else:
         score += 3
 
-    # Land size score (max 15 pts) — 20 acres = full score (training mean ~10 acres)
+    # Land size score (max 15 pts)
     score += min(req.land_size / 20, 1.0) * 15
 
-    # Market proximity score (max 10 pts) — closer is better
+    # Market proximity score (max 10 pts)
     score += max(0, 10 - (req.market_distance / 5))
 
     return round(min(score, 100), 1)
 
 
 def compute_loan_eligibility(predicted_income: int) -> str:
-    # Anchored to training data distribution:
-    #   25th pct = ₹7.2L  →  below this = Low
-    #   75th pct = ₹13L   →  above this = High
-    #   between            →  Medium
     if predicted_income >= 1_300_000:
         return "High"
     elif predicted_income >= 720_000:
@@ -178,16 +187,49 @@ def compute_loan_eligibility(predicted_income: int) -> str:
 
 
 def predict_single(req: PredictionRequest) -> dict:
+    # Step 1: Base income from ML model (captures land, non-agri income, financial factors)
     X = build_feature_vector(req)
     preds = [model.predict(X)[0] for model in models]
-    # Models were trained on log1p(income) — apply inverse transform
-    predicted_income = int(np.expm1(np.mean(preds)))
+    base_income = int(np.expm1(np.mean(preds)))
+
+    # Step 2: Compute agri income from yield inputs
+    # total_produce (quintals) = yield_per_acre x land_size
+    # gross_agri_income = total_produce x market_price_per_quintal
+    # net after 20% cost deduction
+    total_produce = req.yield_per_acre * req.land_size
+    gross_agri = total_produce * req.market_price
+    net_agri_income = int(gross_agri * 0.80)
+
+    # Step 3: Apply crop / soil / season multipliers
+    crop_mult   = CROP_YIELD_MULTIPLIER.get(req.crop_type, 1.0)
+    soil_mult   = SOIL_MULTIPLIER.get(req.soil_type, 1.0)
+    season_mult = SEASON_MULTIPLIER.get(req.season, 1.0)
+    combined_mult = crop_mult * soil_mult * season_mult
+
+    adjusted_agri_income = int(net_agri_income * combined_mult)
+
+    # Step 4: Irrigation bonus on agri income (up to +25%)
+    irrigation_factor = 1.0 + (req.irrigated_percentage / 100) * 0.25
+    adjusted_agri_income = int(adjusted_agri_income * irrigation_factor)
+
+    # Step 5: Final income = ML base income + adjusted agri income
+    predicted_income = base_income + adjusted_agri_income
+
     agri_score = compute_agri_score(req, predicted_income)
     loan_eligibility = compute_loan_eligibility(predicted_income)
+
     return {
         "predicted_income": predicted_income,
         "agri_score": agri_score,
         "loan_eligibility": loan_eligibility,
+        "breakdown": {
+            "ml_base_income": base_income,
+            "agri_income": adjusted_agri_income,
+            "crop_multiplier": crop_mult,
+            "soil_multiplier": soil_mult,
+            "season_multiplier": season_mult,
+            "irrigation_factor": round(irrigation_factor, 3),
+        }
     }
 
 
@@ -198,6 +240,7 @@ def predict_single(req: PredictionRequest) -> dict:
 def health():
     return {"status": "ok"}
 
+
 @app.get("/api/features")
 def get_features():
     return {"features": list(feature_names[:30]), "total": len(feature_names)}
@@ -207,7 +250,6 @@ def get_features():
 def predict(req: PredictionRequest):
     X = build_feature_vector(req)
     preds = [model.predict(X)[0] for model in models]
-    # Models were trained on log1p(income) — apply inverse transform
     fold_predictions = [int(np.expm1(p)) for p in preds]
     avg = int(np.mean(fold_predictions))
     return {
@@ -217,7 +259,7 @@ def predict(req: PredictionRequest):
 
 
 # =========================
-# ✅ COMPARE ROUTE (NEW)
+# COMPARE ROUTE
 # =========================
 @app.post("/api/compare")
 def compare(req: CompareRequest):
@@ -228,19 +270,29 @@ def compare(req: CompareRequest):
     income_b = result_b["predicted_income"]
 
     income_diff = abs(income_a - income_b)
-    income_diff_pct = round((income_diff / max(income_a, income_b)) * 100, 1) if max(income_a, income_b) > 0 else 0
+    income_diff_pct = round(
+        (income_diff / max(income_a, income_b)) * 100, 1
+    ) if max(income_a, income_b) > 0 else 0
 
     if income_a > income_b:
         better = "A"
-        recommendation = f"Scenario A yields ₹{income_diff:,} more income ({income_diff_pct}% higher). Scenario A is the better farming choice."
+        recommendation = (
+            f"Scenario A yields ₹{income_diff:,} more income "
+            f"({income_diff_pct}% higher). Scenario A is the better farming choice."
+        )
     elif income_b > income_a:
         better = "B"
-        recommendation = f"Scenario B yields ₹{income_diff:,} more income ({income_diff_pct}% higher). Scenario B is the better farming choice."
+        recommendation = (
+            f"Scenario B yields ₹{income_diff:,} more income "
+            f"({income_diff_pct}% higher). Scenario B is the better farming choice."
+        )
     else:
         better = "Tie"
         recommendation = "Both scenarios are projected to yield the same income."
 
-    agri_score_diff = round(abs(result_a["agri_score"] - result_b["agri_score"]), 1)
+    agri_score_diff = round(
+        abs(result_a["agri_score"] - result_b["agri_score"]), 1
+    )
 
     return {
         "scenario_a": result_a,
@@ -256,7 +308,7 @@ def compare(req: CompareRequest):
 
 
 # =========================
-# ✅ AI ROUTE — Groq (Free)
+# AI ROUTE — Groq
 # =========================
 @app.post("/api/plan")
 def ai_planner(req: PlanRequest):
@@ -302,13 +354,11 @@ def ai_planner(req: PlanRequest):
 
     try:
         client = Groq(api_key=api_key)
-
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1024
         )
-
         return {"insights": response.choices[0].message.content}
 
     except Exception as e:
